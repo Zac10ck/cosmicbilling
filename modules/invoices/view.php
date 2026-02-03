@@ -74,9 +74,21 @@ $states = getStateCodes();
                 <td><strong><?php echo e($invoice['customer_name']); ?></strong></td>
             </tr>
             <?php if ($invoice['customer_phone']): ?>
+            <?php
+            // Format phone for WhatsApp (remove spaces, dashes, add country code if needed)
+            $phone = preg_replace('/[^0-9]/', '', $invoice['customer_phone']);
+            if (strlen($phone) == 10) {
+                $phone = '91' . $phone; // Add India country code
+            }
+            ?>
             <tr>
                 <td style="color: #666;">Phone</td>
-                <td><?php echo e($invoice['customer_phone']); ?></td>
+                <td>
+                    <a href="https://wa.me/<?php echo $phone; ?>" target="_blank" style="color: #25D366; text-decoration: none; font-weight: 500;" title="Chat on WhatsApp">
+                        <?php echo e($invoice['customer_phone']); ?>
+                        <span style="background: #25D366; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px;">WhatsApp</span>
+                    </a>
+                </td>
             </tr>
             <?php endif; ?>
             <?php if ($invoice['customer_gstin']): ?>

@@ -101,7 +101,16 @@ $totalAmount = array_sum(array_column($invoices, 'grand_total'));
                         <td>
                             <?php echo e($inv['customer_name']); ?>
                             <?php if ($inv['customer_phone']): ?>
-                                <br><small style="color: #666;"><?php echo e($inv['customer_phone']); ?></small>
+                                <?php
+                                // Format phone for WhatsApp (remove spaces, dashes, add country code if needed)
+                                $phone = preg_replace('/[^0-9]/', '', $inv['customer_phone']);
+                                if (strlen($phone) == 10) {
+                                    $phone = '91' . $phone; // Add India country code
+                                }
+                                ?>
+                                <br><a href="https://wa.me/<?php echo $phone; ?>" target="_blank" style="color: #25D366; text-decoration: none;" title="Chat on WhatsApp">
+                                    <small><?php echo e($inv['customer_phone']); ?> 📱</small>
+                                </a>
                             <?php endif; ?>
                         </td>
                         <td>
