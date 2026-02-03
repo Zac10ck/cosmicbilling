@@ -1,0 +1,59 @@
+<?php
+/**
+ * Header Template
+ * COSMIC SURGICALS - Invoice Management System
+ */
+
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/functions.php';
+
+requireLogin();
+
+$currentUser = getCurrentUser();
+$currentPage = basename($_SERVER['PHP_SELF'], '.php');
+$currentModule = basename(dirname($_SERVER['PHP_SELF']));
+
+// Get company info
+global $company;
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo isset($pageTitle) ? e($pageTitle) . ' - ' : ''; ?>COSMIC SURGICALS</title>
+    <link rel="stylesheet" href="/xamp-cosmic/assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/xamp-cosmic/">COSMIC SURGICALS</a>
+        </div>
+        <div class="nav-menu">
+            <?php if (isAdmin()): ?>
+                <a href="/xamp-cosmic/modules/dashboard/index.php" class="<?php echo $currentModule === 'dashboard' ? 'active' : ''; ?>">Dashboard</a>
+            <?php endif; ?>
+            <a href="/xamp-cosmic/modules/invoices/index.php" class="<?php echo $currentModule === 'invoices' ? 'active' : ''; ?>">Invoices</a>
+            <a href="/xamp-cosmic/modules/customers/index.php" class="<?php echo $currentModule === 'customers' ? 'active' : ''; ?>">Customers</a>
+            <a href="/xamp-cosmic/modules/products/index.php" class="<?php echo $currentModule === 'products' ? 'active' : ''; ?>">Products</a>
+            <?php if (isAdmin()): ?>
+                <a href="/xamp-cosmic/modules/reports/index.php" class="<?php echo $currentModule === 'reports' ? 'active' : ''; ?>">Reports</a>
+                <a href="/xamp-cosmic/modules/users/index.php" class="<?php echo $currentModule === 'users' ? 'active' : ''; ?>">Users</a>
+            <?php endif; ?>
+        </div>
+        <div class="nav-user">
+            <span class="user-name"><?php echo e($currentUser['name']); ?></span>
+            <span class="user-role">(<?php echo ucfirst($currentUser['role']); ?>)</span>
+            <a href="/xamp-cosmic/modules/auth/logout.php" class="logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <?php
+        $flash = getFlash();
+        if ($flash):
+        ?>
+        <div class="alert alert-<?php echo $flash['type']; ?>">
+            <?php echo e($flash['message']); ?>
+        </div>
+        <?php endif; ?>
