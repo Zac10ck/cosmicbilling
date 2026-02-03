@@ -98,8 +98,27 @@ $totalAmount = array_sum(array_column($invoices, 'grand_total'));
                             <?php endif; ?>
                         </td>
                         <td>
-                            <span class="badge badge-<?php echo $inv['invoice_type'] === 'cash' ? 'success' : 'warning'; ?>">
-                                <?php echo ucfirst($inv['invoice_type']); ?>
+                            <?php
+                            // Define badge colors for different invoice types
+                            $typeBadges = [
+                                'cash' => 'success',
+                                'upi' => 'primary',
+                                'card' => 'info',
+                                'bank' => 'secondary',
+                                'credit' => 'warning'
+                            ];
+                            $typeLabels = [
+                                'cash' => 'Cash',
+                                'upi' => 'UPI',
+                                'card' => 'Card',
+                                'bank' => 'Bank',
+                                'credit' => 'Credit'
+                            ];
+                            $badgeClass = $typeBadges[$inv['invoice_type']] ?? 'secondary';
+                            $typeLabel = $typeLabels[$inv['invoice_type']] ?? ucfirst($inv['invoice_type']);
+                            ?>
+                            <span class="badge badge-<?php echo $badgeClass; ?>">
+                                <?php echo $typeLabel; ?>
                             </span>
                         </td>
                         <td class="text-right">Rs. <?php echo formatCurrency($inv['grand_total']); ?></td>

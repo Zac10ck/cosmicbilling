@@ -493,7 +493,18 @@ $docTitle = 'Invoice-' . $invoice['invoice_number'];
 
         <!-- Title -->
         <div class="inv-title">
-            <h2><?php echo strtoupper($invoice['invoice_type']); ?> BILL - TAX INVOICE</h2>
+            <?php
+            // Format invoice type for display
+            $invoiceTypeLabels = [
+                'cash' => 'CASH',
+                'credit' => 'CREDIT',
+                'upi' => 'UPI PAYMENT',
+                'card' => 'CARD PAYMENT',
+                'bank' => 'BANK TRANSFER'
+            ];
+            $displayType = $invoiceTypeLabels[$invoice['invoice_type']] ?? strtoupper($invoice['invoice_type']);
+            ?>
+            <h2><?php echo $displayType; ?> - TAX INVOICE</h2>
             <div class="copy-type"><?php echo strtoupper($invoice['copy_type']); ?></div>
         </div>
 

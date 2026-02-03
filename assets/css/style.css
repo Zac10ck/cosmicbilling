@@ -448,6 +448,21 @@ tbody tr:hover {
     color: #0c5460;
 }
 
+.badge-primary {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.badge-secondary {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.badge-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
 /* Actions */
 .actions {
     display: flex;
