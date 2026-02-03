@@ -17,6 +17,27 @@ use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
 /**
+ * Log email activity
+ */
+function logEmail($type, $invoice_number, $recipient, $status, $message = '') {
+    $logFile = __DIR__ . '/../logs/email.log';
+    $timestamp = date('Y-m-d H:i:s');
+    $logEntry = "[{$timestamp}] [{$type}] Invoice: {$invoice_number} | To: {$recipient} | Status: {$status}";
+    if ($message) {
+        $logEntry .= " | Message: {$message}";
+    }
+    $logEntry .= "\n";
+
+    // Create logs directory if not exists
+    $logDir = dirname($logFile);
+    if (!is_dir($logDir)) {
+        mkdir($logDir, 0755, true);
+    }
+
+    file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
+}
+
+/**
  * Send invoice notification email
  *
  * @param array $invoice Invoice data
@@ -64,9 +85,15 @@ function sendInvoiceNotification($invoice, $items, $baseUrl = '') {
 
         $mail->send();
 
+        // Log success
+        logEmail('INVOICE', $invoice['invoice_number'], $config['notify_email'], 'SENT', 'Amount: Rs. ' . $invoice['grand_total']);
+
         return ['success' => true, 'message' => 'Email sent successfully'];
 
     } catch (Exception $e) {
+        // Log failure
+        logEmail('INVOICE', $invoice['invoice_number'] ?? 'N/A', $config['notify_email'], 'FAILED', $mail->ErrorInfo);
+
         return ['success' => false, 'message' => 'Email failed: ' . $mail->ErrorInfo];
     }
 }
