@@ -802,10 +802,17 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
             .then(res => res.json())
             .then(result => {
                 if (result.success) {
+                    // Show email status
+                    if (result.email_sent) {
+                        console.log('Email notification sent successfully');
+                    } else {
+                        console.warn('Email notification failed: ' + result.email_message);
+                    }
                     // Open print page
                     window.open('/xamp-cosmic/modules/invoices/print.php?id=' + result.invoice_id, '_blank');
-                    // Redirect to invoice list
-                    window.location.href = '/xamp-cosmic/modules/invoices/index.php?saved=1';
+                    // Redirect to invoice list with email status
+                    const emailParam = result.email_sent ? '&email=sent' : '&email=failed';
+                    window.location.href = '/xamp-cosmic/modules/invoices/index.php?saved=1' + emailParam;
                 } else {
                     alert('Error: ' + (result.error || 'Failed to save'));
                 }

@@ -60,7 +60,14 @@ $totalAmount = array_sum(array_column($invoices, 'grand_total'));
     </form>
 
     <?php if (isset($_GET['saved'])): ?>
-        <div class="alert alert-success">Invoice saved successfully!</div>
+        <div class="alert alert-success">
+            Invoice saved successfully!
+            <?php if (isset($_GET['email']) && $_GET['email'] === 'sent'): ?>
+                <br><small>Email notification sent to cosmicsurgical@gmail.com</small>
+            <?php elseif (isset($_GET['email']) && $_GET['email'] === 'failed'): ?>
+                <br><small style="color: #856404;">Email notification could not be sent (invoice was still saved)</small>
+            <?php endif; ?>
+        </div>
     <?php endif; ?>
 
     <?php if (empty($invoices)): ?>

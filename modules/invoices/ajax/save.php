@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/../../../includes/auth.php';
 require_once __DIR__ . '/../../../includes/functions.php';
+require_once __DIR__ . '/../../../includes/mailer.php';
 
 header('Content-Type: application/json');
 
@@ -172,10 +173,34 @@ try {
 
     $db->commit();
 
+    // Prepare items data for email
+    $invoice['id'] = $invoiceId;
+    $invoice['created_at'] = date('Y-m-d H:i:s');
+
+    // Get saved items from database for accurate totals
+    $itemsStmt = $db->prepare("SELECT * FROM invoice_items WHERE invoice_id = ?");
+    $itemsStmt->execute([$invoiceId]);
+    $savedItems = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Send email notification (non-blocking - don't fail invoice if email fails)
+    $emailResult = ['success' => false, 'message' => 'Email not sent'];
+    try {
+        // Determine base URL for invoice link
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $baseUrl = $protocol . '://' . $host . '/xamp-cosmic';
+
+        $emailResult = sendInvoiceNotification($invoice, $savedItems, $baseUrl);
+    } catch (Exception $emailEx) {
+        $emailResult = ['success' => false, 'message' => $emailEx->getMessage()];
+    }
+
     echo json_encode([
         'success' => true,
         'invoice_id' => $invoiceId,
-        'invoice_number' => $invoice['invoice_number']
+        'invoice_number' => $invoice['invoice_number'],
+        'email_sent' => $emailResult['success'],
+        'email_message' => $emailResult['message']
     ]);
 
 } catch (Exception $e) {
