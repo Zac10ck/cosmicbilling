@@ -106,6 +106,15 @@ function buildInvoiceEmailBody($invoice, $items, $baseUrl = '') {
     // Print link
     $printLink = $baseUrl ? "{$baseUrl}/modules/invoices/print.php?id={$invoice['id']}" : '#';
 
+    // Pre-compute GSTIN display
+    $gstinDisplay = '';
+    if (!empty($invoice['customer_gstin'])) {
+        $gstinDisplay = ' | GSTIN: ' . $invoice['customer_gstin'];
+    }
+
+    // Customer phone display
+    $phoneDisplay = $invoice['customer_phone'] ? $invoice['customer_phone'] : '';
+
     $html = <<<HTML
 <!DOCTYPE html>
 <html>
@@ -160,8 +169,7 @@ function buildInvoiceEmailBody($invoice, $items, $baseUrl = '') {
                                 <p style="margin: 0 0 5px; font-size: 11px; color: #666; text-transform: uppercase;">Customer</p>
                                 <p style="margin: 0; font-size: 16px; font-weight: 600; color: #333;">{$invoice['customer_name']}</p>
                                 <p style="margin: 5px 0 0; font-size: 13px; color: #666;">
-                                    {$invoice['customer_phone']}
-                                    {$invoice['customer_gstin'] ? ' | GSTIN: ' . $invoice['customer_gstin'] : ''}
+                                    {$phoneDisplay}{$gstinDisplay}
                                 </p>
                             </div>
                         </td>
