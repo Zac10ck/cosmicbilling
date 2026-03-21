@@ -134,6 +134,7 @@ if ($connected && empty($errors)) {
             gst_rate DECIMAL(5,2) DEFAULT 5.00,
             mrp DECIMAL(10,2),
             unit VARCHAR(20) DEFAULT 'Nos',
+            stock_count INT DEFAULT 0,
             active TINYINT(1) DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

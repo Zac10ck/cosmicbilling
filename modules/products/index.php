@@ -57,6 +57,7 @@ $products = $stmt->fetchAll();
                         <th class="text-right">MRP</th>
                         <th class="text-right">GST %</th>
                         <th>Unit</th>
+                        <th class="text-right">Stock</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -68,6 +69,7 @@ $products = $stmt->fetchAll();
                         <td class="text-right"><?php echo $product['mrp'] ? 'Rs. ' . formatCurrency($product['mrp']) : '-'; ?></td>
                         <td class="text-right"><?php echo $product['gst_rate']; ?>%</td>
                         <td><?php echo e($product['unit']); ?></td>
+                        <td class="text-right"><?php echo (int)$product['stock_count']; ?></td>
                         <td class="actions">
                             <a href="/xamp-cosmic/modules/products/edit.php?id=<?php echo $product['id']; ?>" class="btn btn-sm btn-secondary">Edit</a>
                             <button onclick="deleteProduct(<?php echo $product['id']; ?>)" class="btn btn-sm btn-danger">Delete</button>

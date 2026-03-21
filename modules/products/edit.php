@@ -46,7 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'hsn_code' => trim($_POST['hsn_code'] ?? ''),
             'gst_rate' => $_POST['gst_rate'] ?? '5.00',
             'mrp' => $_POST['mrp'] ?? '',
-            'unit' => trim($_POST['unit'] ?? 'Nos')
+            'unit' => trim($_POST['unit'] ?? 'Nos'),
+            'stock_count' => $_POST['stock_count'] ?? '0'
         ];
 
         // Validate
@@ -55,13 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($errors)) {
-            $stmt = $db->prepare("UPDATE products SET name = ?, hsn_code = ?, gst_rate = ?, mrp = ?, unit = ? WHERE id = ?");
+            $stmt = $db->prepare("UPDATE products SET name = ?, hsn_code = ?, gst_rate = ?, mrp = ?, unit = ?, stock_count = ? WHERE id = ?");
             $stmt->execute([
                 $product['name'],
                 $product['hsn_code'] ?: null,
                 $product['gst_rate'],
                 $product['mrp'] ?: null,
                 $product['unit'],
+                (int)$product['stock_count'],
                 $id
             ]);
 
@@ -131,6 +133,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="Ltr" <?php echo $product['unit'] === 'Ltr' ? 'selected' : ''; ?>>Ltr</option>
                     <option value="Mtr" <?php echo $product['unit'] === 'Mtr' ? 'selected' : ''; ?>>Mtr</option>
                 </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="stock_count">Stock Count</label>
+                <input type="number" id="stock_count" name="stock_count" class="form-control" min="0" step="1"
+                       value="<?php echo e($product['stock_count']); ?>">
             </div>
         </div>
 

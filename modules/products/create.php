@@ -13,7 +13,8 @@ $product = [
     'hsn_code' => '',
     'gst_rate' => '5.00',
     'mrp' => '',
-    'unit' => 'Nos'
+    'unit' => 'Nos',
+    'stock_count' => ''
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -26,7 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'hsn_code' => trim($_POST['hsn_code'] ?? ''),
             'gst_rate' => $_POST['gst_rate'] ?? '5.00',
             'mrp' => $_POST['mrp'] ?? '',
-            'unit' => trim($_POST['unit'] ?? 'Nos')
+            'unit' => trim($_POST['unit'] ?? 'Nos'),
+            'stock_count' => $_POST['stock_count'] ?? '0'
         ];
 
         // Validate
@@ -36,13 +38,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($errors)) {
             $db = getDB();
-            $stmt = $db->prepare("INSERT INTO products (name, hsn_code, gst_rate, mrp, unit) VALUES (?, ?, ?, ?, ?)");
+            $stmt = $db->prepare("INSERT INTO products (name, hsn_code, gst_rate, mrp, unit, stock_count) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $product['name'],
                 $product['hsn_code'] ?: null,
                 $product['gst_rate'],
                 $product['mrp'] ?: null,
-                $product['unit']
+                $product['unit'],
+                (int)$product['stock_count']
             ]);
 
             redirect('/xamp-cosmic/modules/products/index.php', 'Product added successfully');
@@ -111,6 +114,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <option value="Ltr" <?php echo $product['unit'] === 'Ltr' ? 'selected' : ''; ?>>Ltr</option>
                     <option value="Mtr" <?php echo $product['unit'] === 'Mtr' ? 'selected' : ''; ?>>Mtr</option>
                 </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="stock_count">Stock Count</label>
+                <input type="number" id="stock_count" name="stock_count" class="form-control" min="0" step="1"
+                       value="<?php echo e($product['stock_count']); ?>" placeholder="0">
             </div>
         </div>
 
