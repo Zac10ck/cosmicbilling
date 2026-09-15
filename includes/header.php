@@ -26,7 +26,7 @@ global $company;
     <link rel="manifest" href="/xamp-cosmic/manifest.webmanifest">
     <link rel="icon" href="/xamp-cosmic/assets/icons/icon.svg" type="image/svg+xml">
     <title><?php echo isset($pageTitle) ? e($pageTitle) . ' - ' : ''; ?>COSMIC SURGICALS</title>
-    <link rel="stylesheet" href="/xamp-cosmic/assets/css/style.css">
+    <link rel="stylesheet" href="/xamp-cosmic/assets/css/style.css?v=2.0.2">
 </head>
 <body>
     <nav class="navbar">
