@@ -100,6 +100,7 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
 
         /* Items Table */
         .items-wrapper { overflow-x: auto; margin: 0 -10px; padding: 0 10px; }
+        .items-wrapper.autocomplete-open { padding-bottom: 215px; }
         .items-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 800px; }
         .items-table th { background: linear-gradient(135deg, #374151, #4b5563); color: white; padding: 14px 12px; text-align: center; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
         .items-table th:first-child { border-radius: 12px 0 0 0; }
@@ -185,6 +186,7 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
             .nav-bar a { padding: 9px 10px; }
             .card-body { padding: 16px 12px; }
             .items-wrapper { overflow: visible; margin: 0; padding: 0; }
+            .items-wrapper.autocomplete-open { padding-bottom: 0; }
             .items-table { min-width: 0; display: block; }
             .items-table thead { display: none; }
             .items-table tbody { display: block; }
@@ -619,6 +621,15 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
             const nameInput = tr.querySelector('.item-name');
             const prodList = tr.querySelector('.product-list');
             const linkStatus = tr.querySelector('.item-link-status');
+            const itemsWrapper = tr.closest('.items-wrapper');
+            const hideProductList = () => {
+                prodList.classList.remove('show');
+                if (!itemsWrapper.querySelector('.product-list.show')) itemsWrapper.classList.remove('autocomplete-open');
+            };
+            const showProductList = () => {
+                prodList.classList.add('show');
+                itemsWrapper.classList.add('autocomplete-open');
+            };
 
             tr.querySelectorAll('.item-source-btn').forEach(button => {
                 button.addEventListener('click', function() { setItemSource(tr, this.dataset.source); });
@@ -626,14 +637,14 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
 
             nameInput.addEventListener('input', function() {
                 if (tr.dataset.itemSource !== 'inventory') {
-                    prodList.classList.remove('show');
+                    hideProductList();
                     return;
                 }
                 const val = this.value.toLowerCase();
-                if (val.length < 2) { prodList.classList.remove('show'); return; }
+                if (val.length < 2) { hideProductList(); return; }
 
                 const matches = products.filter(p => p.name.toLowerCase().includes(val) || (p.hsn_code && p.hsn_code.includes(val)) || (p.barcode && p.barcode.includes(val)));
-                if (matches.length === 0) { prodList.classList.remove('show'); return; }
+                if (matches.length === 0) { hideProductList(); return; }
 
                 const safe = value => String(value == null ? '' : value).replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
                 prodList.innerHTML = matches.slice(0, 5).map(p => `
@@ -642,7 +653,7 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
                         <div class="details">Stock: ${safe(p.stock_count || 0)} ${safe(p.unit || '')} | MRP: ₹${safe(p.mrp || 0)} | GST: ${safe(p.gst_rate)}%</div>
                     </div>
                 `).join('');
-                prodList.classList.add('show');
+                showProductList();
 
                 prodList.querySelectorAll('.autocomplete-item').forEach(item => {
                     item.addEventListener('click', function() {
@@ -660,7 +671,7 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
                             linkStatus.className = 'item-link-status ' + (stock > 0 ? 'linked' : 'warning');
                             calculateAll();
                         }
-                        prodList.classList.remove('show');
+                        hideProductList();
                     });
                 });
             });
@@ -675,7 +686,7 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
                 }
             });
 
-            nameInput.addEventListener('blur', () => setTimeout(() => prodList.classList.remove('show'), 200));
+            nameInput.addEventListener('blur', () => setTimeout(hideProductList, 200));
         }
 
         function setItemSource(row, source) {
@@ -686,6 +697,8 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
             delete row.dataset.selectedProductName;
             delete row.dataset.availableStock;
             row.querySelector('.product-list').classList.remove('show');
+            const itemsWrapper = row.closest('.items-wrapper');
+            if (!itemsWrapper.querySelector('.product-list.show')) itemsWrapper.classList.remove('autocomplete-open');
             const nameInput = row.querySelector('.item-name');
             const status = row.querySelector('.item-link-status');
             if (source === 'manual') {
