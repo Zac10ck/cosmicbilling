@@ -266,32 +266,6 @@ if ($connected && empty($errors)) {
     }
 }
 
-// Add some sample products
-if ($connected && empty($errors)) {
-    try {
-        $stmt = $pdo->query("SELECT COUNT(*) FROM products");
-        if ($stmt->fetchColumn() == 0) {
-            $products = [
-                ['Surgical Gloves (Pair)', '40151110', 5.00, 45.00, 'Pair'],
-                ['Cotton Roll 500g', '30051010', 5.00, 180.00, 'Nos'],
-                ['Bandage Crepe 6"', '30059010', 5.00, 85.00, 'Nos'],
-                ['Syringe 5ml Disposable', '90183100', 12.00, 8.00, 'Nos'],
-                ['Surgical Mask (Box of 50)', '63079090', 5.00, 250.00, 'Box'],
-                ['Betadine Solution 100ml', '30049099', 12.00, 125.00, 'Nos'],
-                ['ORS Sachets', '30049099', 5.00, 22.00, 'Nos'],
-                ['Digital Thermometer', '90251990', 18.00, 150.00, 'Nos'],
-            ];
-
-            $stmt = $pdo->prepare("INSERT INTO products (name, hsn_code, gst_rate, mrp, unit) VALUES (?, ?, ?, ?, ?)");
-            foreach ($products as $product) {
-                $stmt->execute($product);
-            }
-            $messages[] = "Sample products added.";
-        }
-    } catch (PDOException $e) {
-        // Ignore if products already exist
-    }
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
