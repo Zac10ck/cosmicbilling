@@ -4,9 +4,10 @@
  * COSMIC SURGICALS - Invoice Management System
  */
 
+require_once __DIR__ . '/../../includes/auth.php';
+requireAdmin();
 $pageTitle = 'Daily Report';
 require_once __DIR__ . '/../../includes/header.php';
-requireAdmin();
 
 $db = getDB();
 $date = $_GET['date'] ?? date('Y-m-d');

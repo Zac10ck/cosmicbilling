@@ -1,135 +1,51 @@
 <?php
-/**
- * Add Product
- * COSMIC SURGICALS - Invoice Management System
- */
-
+require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../includes/inventory.php';
+requireLogin();
 $pageTitle = 'Add Product';
-require_once __DIR__ . '/../../includes/header.php';
 
 $errors = [];
-$product = [
-    'name' => '',
-    'hsn_code' => '',
-    'gst_rate' => '5.00',
-    'mrp' => '',
-    'unit' => 'Nos',
-    'stock_count' => ''
-];
-
+$product = ['name'=>'','hsn_code'=>'','barcode'=>'','gst_rate'=>'5.00','mrp'=>'','unit'=>'Nos','opening_stock'=>'0','low_stock_threshold'=>'5'];
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' && isset($_GET['barcode'])) $product['barcode'] = preg_replace('/\s+/', '', trim($_GET['barcode']));
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate CSRF
-    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
-        $errors[] = 'Invalid form submission';
+    if (!verifyCSRFToken(isset($_POST['csrf_token']) ? $_POST['csrf_token'] : '')) {
+        $errors[] = 'Your session expired. Please try again.';
     } else {
-        $product = [
-            'name' => trim($_POST['name'] ?? ''),
-            'hsn_code' => trim($_POST['hsn_code'] ?? ''),
-            'gst_rate' => $_POST['gst_rate'] ?? '5.00',
-            'mrp' => $_POST['mrp'] ?? '',
-            'unit' => trim($_POST['unit'] ?? 'Nos'),
-            'stock_count' => $_POST['stock_count'] ?? '0'
-        ];
-
-        // Validate
-        if (empty($product['name'])) {
-            $errors[] = 'Product name is required';
-        }
-
-        if (empty($errors)) {
-            $db = getDB();
-            $stmt = $db->prepare("INSERT INTO products (name, hsn_code, gst_rate, mrp, unit, stock_count) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([
-                $product['name'],
-                $product['hsn_code'] ?: null,
-                $product['gst_rate'],
-                $product['mrp'] ?: null,
-                $product['unit'],
-                (int)$product['stock_count']
-            ]);
-
-            redirect('/xamp-cosmic/modules/products/index.php', 'Product added successfully');
+        foreach (array_keys($product) as $key) if (isset($_POST[$key])) $product[$key] = trim($_POST[$key]);
+        $product['barcode'] = preg_replace('/\s+/', '', $product['barcode']);
+        if ($product['name'] === '') $errors[] = 'Product name is required.';
+        if (!is_numeric($product['opening_stock']) || (float)$product['opening_stock'] < 0) $errors[] = 'Opening stock must be zero or more.';
+        if (!is_numeric($product['low_stock_threshold']) || (float)$product['low_stock_threshold'] < 0) $errors[] = 'Low-stock alert must be zero or more.';
+        if (!$errors) {
+            try {
+                $imagePath = saveProductImage(isset($_FILES['image']) ? $_FILES['image'] : null);
+                $db = getDB(); $db->beginTransaction();
+                $stmt = $db->prepare("INSERT INTO products (name,hsn_code,barcode,image_path,gst_rate,mrp,unit,stock_count,low_stock_threshold) VALUES (?,?,?,?,?,?,?,?,?)");
+                $stmt->execute([$product['name'],$product['hsn_code']?:null,$product['barcode']?:null,$imagePath,$product['gst_rate'],$product['mrp']!==''?$product['mrp']:null,$product['unit'],$product['opening_stock'],$product['low_stock_threshold']]);
+                $productId = $db->lastInsertId();
+                recordStockMovement($db,$productId,'product_created',0,$product['opening_stock'],$product['opening_stock'],$_SESSION['user_id'],'Product created');
+                if ((float)$product['opening_stock'] > 0) recordStockMovement($db,$productId,'opening',$product['opening_stock'],0,$product['opening_stock'],$_SESSION['user_id'],'Opening stock');
+                $db->commit();
+                redirect('/xamp-cosmic/modules/inventory/history.php?id='.$productId,'Product added successfully');
+            } catch (Exception $e) {
+                if (isset($db) && $db->inTransaction()) $db->rollBack();
+                $errors[] = strpos($e->getMessage(),'Duplicate') !== false ? 'That barcode is already used by another product.' : $e->getMessage();
+            }
         }
     }
 }
+require_once __DIR__ . '/../../includes/header.php';
 ?>
-
-<div class="page-header">
-    <h1>Add Product</h1>
-    <a href="/xamp-cosmic/modules/products/index.php" class="btn btn-secondary">Back to List</a>
-</div>
-
-<div class="card">
-    <?php if (!empty($errors)): ?>
-        <div class="alert alert-danger">
-            <?php foreach ($errors as $error): ?>
-                <div><?php echo e($error); ?></div>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
-
-    <form method="POST">
-        <?php echo csrfField(); ?>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="name">Product Name *</label>
-                <input type="text" id="name" name="name" class="form-control" required
-                       value="<?php echo e($product['name']); ?>">
-            </div>
-
-            <div class="form-group">
-                <label for="hsn_code">HSN Code</label>
-                <input type="text" id="hsn_code" name="hsn_code" class="form-control"
-                       value="<?php echo e($product['hsn_code']); ?>">
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="mrp">MRP (Rs.)</label>
-                <input type="number" id="mrp" name="mrp" class="form-control" step="0.01" min="0"
-                       value="<?php echo e($product['mrp']); ?>">
-            </div>
-
-            <div class="form-group">
-                <label for="gst_rate">GST Rate (%)</label>
-                <select id="gst_rate" name="gst_rate" class="form-control">
-                    <option value="0" <?php echo $product['gst_rate'] == '0' ? 'selected' : ''; ?>>0%</option>
-                    <option value="5" <?php echo $product['gst_rate'] == '5' || $product['gst_rate'] == '5.00' ? 'selected' : ''; ?>>5%</option>
-                    <option value="12" <?php echo $product['gst_rate'] == '12' ? 'selected' : ''; ?>>12%</option>
-                    <option value="18" <?php echo $product['gst_rate'] == '18' ? 'selected' : ''; ?>>18%</option>
-                    <option value="28" <?php echo $product['gst_rate'] == '28' ? 'selected' : ''; ?>>28%</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="unit">Unit</label>
-                <select id="unit" name="unit" class="form-control">
-                    <option value="Nos" <?php echo $product['unit'] === 'Nos' ? 'selected' : ''; ?>>Nos</option>
-                    <option value="Pair" <?php echo $product['unit'] === 'Pair' ? 'selected' : ''; ?>>Pair</option>
-                    <option value="Box" <?php echo $product['unit'] === 'Box' ? 'selected' : ''; ?>>Box</option>
-                    <option value="Pack" <?php echo $product['unit'] === 'Pack' ? 'selected' : ''; ?>>Pack</option>
-                    <option value="Kg" <?php echo $product['unit'] === 'Kg' ? 'selected' : ''; ?>>Kg</option>
-                    <option value="Ltr" <?php echo $product['unit'] === 'Ltr' ? 'selected' : ''; ?>>Ltr</option>
-                    <option value="Mtr" <?php echo $product['unit'] === 'Mtr' ? 'selected' : ''; ?>>Mtr</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="stock_count">Stock Count</label>
-                <input type="number" id="stock_count" name="stock_count" class="form-control" min="0" step="1"
-                       value="<?php echo e($product['stock_count']); ?>" placeholder="0">
-            </div>
-        </div>
-
-        <div class="mt-20">
-            <button type="submit" class="btn btn-primary">Add Product</button>
-            <a href="/xamp-cosmic/modules/products/index.php" class="btn btn-secondary">Cancel</a>
-        </div>
-    </form>
-</div>
-
+<div class="page-header"><div><span class="eyebrow">Product master</span><h1>Add a product</h1><p class="page-subtitle">Only the essentials. You can add more stock at any time.</p></div><a href="/xamp-cosmic/modules/inventory/index.php" class="btn btn-secondary">Back</a></div>
+<?php if ($errors): ?><div class="alert alert-danger"><?php foreach ($errors as $error): ?><div><?php echo e($error); ?></div><?php endforeach; ?></div><?php endif; ?>
+<form method="POST" enctype="multipart/form-data" class="card mobile-form">
+<?php echo csrfField(); ?>
+<div class="form-section-title">Product details</div>
+<div class="form-row"><div class="form-group form-grow-2"><label for="name">Product name *</label><input type="text" id="name" name="name" class="form-control form-control-lg" required autofocus value="<?php echo e($product['name']); ?>" placeholder="Example: Surgical Gloves Medium"></div><div class="form-group"><label for="barcode">Barcode</label><div class="input-action"><input type="text" id="barcode" name="barcode" class="form-control form-control-lg" inputmode="numeric" value="<?php echo e($product['barcode']); ?>" placeholder="Scan or type"><button type="button" class="btn btn-scan" data-barcode-target="barcode">Scan</button></div></div></div>
+<div class="form-row"><div class="form-group"><label for="hsn_code">HSN code</label><input type="text" id="hsn_code" name="hsn_code" class="form-control" value="<?php echo e($product['hsn_code']); ?>"></div><div class="form-group"><label for="mrp">MRP (Rs.)</label><input type="number" id="mrp" name="mrp" class="form-control" step="0.01" min="0" value="<?php echo e($product['mrp']); ?>"></div><div class="form-group"><label for="gst_rate">GST</label><select id="gst_rate" name="gst_rate" class="form-control"><?php foreach ([0,5,12,18,28] as $rate): ?><option value="<?php echo $rate; ?>" <?php echo (float)$product['gst_rate']===(float)$rate?'selected':''; ?>><?php echo $rate; ?>%</option><?php endforeach; ?></select></div><div class="form-group"><label for="unit">Unit</label><select id="unit" name="unit" class="form-control"><?php foreach (['Nos','Pair','Box','Pack','Kg','Ltr','Mtr'] as $unit): ?><option value="<?php echo $unit; ?>" <?php echo $product['unit']===$unit?'selected':''; ?>><?php echo $unit; ?></option><?php endforeach; ?></select></div></div>
+<div class="form-section-title">Starting inventory</div>
+<div class="form-row"><div class="form-group"><label for="opening_stock">Quantity on hand</label><input type="number" id="opening_stock" name="opening_stock" class="form-control form-control-lg" min="0" step="0.01" value="<?php echo e($product['opening_stock']); ?>"></div><div class="form-group"><label for="low_stock_threshold">Warn me at</label><input type="number" id="low_stock_threshold" name="low_stock_threshold" class="form-control form-control-lg" min="0" step="0.01" value="<?php echo e($product['low_stock_threshold']); ?>"><small class="field-help">Shown as low stock at this quantity.</small></div><div class="form-group form-grow-2"><label for="image">Product photo</label><input type="file" id="image" name="image" class="form-control file-input" accept="image/jpeg,image/png,image/webp" capture="environment"><small class="field-help">Take a photo or choose one. Maximum 5 MB.</small></div></div>
+<div class="sticky-form-actions"><button type="submit" class="btn btn-primary btn-lg">Save product</button><a href="/xamp-cosmic/modules/inventory/index.php" class="btn btn-secondary btn-lg">Cancel</a></div>
+</form>
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

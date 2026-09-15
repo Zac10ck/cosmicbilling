@@ -13,6 +13,10 @@ A complete GST-compliant billing and invoice management system built with PHP an
 - **Reports** - Daily and monthly sales reports (admin only)
 - **User Roles** - Admin (full access) and Staff (limited access)
 - **Professional Print** - Beautiful invoice printouts with all GST details
+- **Inventory V2** - Mobile-friendly stock entry, low-stock alerts and complete audit history
+- **Automatic Deduction** - Finalized invoices safely reduce linked product stock
+- **Barcode & Photos** - Camera scanning, barcode search and local product images
+- **Installable PWA** - App-like inventory experience on Android over configured HTTPS
 
 ## Requirements
 
@@ -164,6 +168,10 @@ $company = [
 - **Reverse Charge**: Indicated on invoice (default: No)
 
 ## Troubleshooting
+
+## Inventory V2 Upgrade
+
+Existing installations must import `migrations/002_inventory_v2.sql` in phpMyAdmin before deploying Version 2. See `INVENTORY_V2_DEPLOYMENT.md` for the full backup, LAN, mobile and HTTPS checklist.
 
 ### MySQL Connection Error
 - Ensure MySQL is running in XAMPP Control Panel

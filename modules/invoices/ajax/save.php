@@ -7,6 +7,7 @@
 require_once __DIR__ . '/../../../includes/auth.php';
 require_once __DIR__ . '/../../../includes/functions.php';
 require_once __DIR__ . '/../../../includes/mailer.php';
+require_once __DIR__ . '/../../../includes/inventory.php';
 
 header('Content-Type: application/json');
 
@@ -78,6 +79,31 @@ try {
 
     if (empty($data['items']) || !is_array($data['items'])) {
         throw new Exception('At least one item is required');
+    }
+
+    // Aggregate and lock managed products before creating the invoice. Sorting
+    // the IDs keeps lock order consistent if two staff members bill together.
+    $stockRequirements = [];
+    foreach ($data['items'] as $item) {
+        $productId = isset($item['product_id']) ? (int)$item['product_id'] : 0;
+        $quantity = isset($item['quantity']) ? (float)$item['quantity'] : 0;
+        if ($quantity <= 0) throw new Exception('Item quantity must be greater than zero');
+        if ($productId > 0) {
+            if (!isset($stockRequirements[$productId])) $stockRequirements[$productId] = 0;
+            $stockRequirements[$productId] += $quantity;
+        }
+    }
+    ksort($stockRequirements);
+    $lockedProducts = [];
+    $lockStmt = $db->prepare("SELECT id, name, stock_count FROM products WHERE id = ? AND active = 1 FOR UPDATE");
+    foreach ($stockRequirements as $productId => $requiredQuantity) {
+        $lockStmt->execute([$productId]);
+        $locked = $lockStmt->fetch();
+        if (!$locked) throw new Exception('A selected product is no longer available. Please refresh the invoice.');
+        if ((float)$locked['stock_count'] < $requiredQuantity) {
+            throw new Exception($locked['name'] . ' has only ' . formatStock($locked['stock_count']) . ' in stock. Requested: ' . formatStock($requiredQuantity));
+        }
+        $lockedProducts[$productId] = $locked;
     }
 
     // Insert invoice
@@ -155,7 +181,7 @@ try {
 
         $itemStmt->execute([
             $invoiceId,
-            $item['product_id'] ?: null,
+            !empty($item['product_id']) ? (int)$item['product_id'] : null,
             $description,
             $item['hsn_code'] ?: null,
             $item['batch_no'] ?: null,
@@ -169,6 +195,20 @@ try {
             $igstAmount,
             $lineTotal
         ]);
+    }
+
+    // Deduct all managed products and write the audit entries in the same
+    // transaction as the invoice. Any failure rolls everything back.
+    $deductStmt = $db->prepare("UPDATE products SET stock_count = ? WHERE id = ?");
+    foreach ($stockRequirements as $productId => $requiredQuantity) {
+        $before = (float)$lockedProducts[$productId]['stock_count'];
+        $after = $before - $requiredQuantity;
+        $deductStmt->execute([$after, $productId]);
+        recordStockMovement(
+            $db, $productId, 'sale', -$requiredQuantity, $before, $after,
+            $_SESSION['user_id'], 'Automatically deducted for invoice ' . $invoice['invoice_number'],
+            'invoice', $invoiceId
+        );
     }
 
     $db->commit();

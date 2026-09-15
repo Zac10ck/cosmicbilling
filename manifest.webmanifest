@@ -1,0 +1,13 @@
+{
+  "name": "Cosmic Surgicals Inventory",
+  "short_name": "Cosmic Stock",
+  "description": "Simple billing and inventory for Cosmic Surgicals",
+  "start_url": "/xamp-cosmic/modules/inventory/index.php",
+  "scope": "/xamp-cosmic/",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#3157d5",
+  "icons": [
+    { "src": "/xamp-cosmic/assets/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

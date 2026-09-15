@@ -584,13 +584,14 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
                 const val = this.value.toLowerCase();
                 if (val.length < 2) { prodList.classList.remove('show'); return; }
 
-                const matches = products.filter(p => p.name.toLowerCase().includes(val) || (p.hsn_code && p.hsn_code.includes(val)));
+                const matches = products.filter(p => p.name.toLowerCase().includes(val) || (p.hsn_code && p.hsn_code.includes(val)) || (p.barcode && p.barcode.includes(val)));
                 if (matches.length === 0) { prodList.classList.remove('show'); return; }
 
+                const safe = value => String(value == null ? '' : value).replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
                 prodList.innerHTML = matches.slice(0, 5).map(p => `
                     <div class="autocomplete-item" data-id="${p.id}">
-                        <div class="name">${p.name}</div>
-                        <div class="details">HSN: ${p.hsn_code || '-'} | MRP: ₹${p.mrp || 0} | GST: ${p.gst_rate}%</div>
+                        <div class="name">${safe(p.name)}</div>
+                        <div class="details">Stock: ${safe(p.stock_count || 0)} ${safe(p.unit || '')} | MRP: ₹${safe(p.mrp || 0)} | GST: ${safe(p.gst_rate)}%</div>
                     </div>
                 `).join('');
                 prodList.classList.add('show');
@@ -601,6 +602,8 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
                         if (p) {
                             nameInput.value = p.name;
                             tr.querySelector('.item-product-id').value = p.id;
+                            tr.dataset.selectedProductName = p.name;
+                            tr.dataset.availableStock = p.stock_count || 0;
                             tr.querySelector('.item-hsn').value = p.hsn_code || '';
                             tr.querySelector('.item-mrp').value = p.mrp || 0;
                             tr.querySelector('.item-gst').value = p.gst_rate || 5;
@@ -609,6 +612,14 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
                         prodList.classList.remove('show');
                     });
                 });
+            });
+
+            nameInput.addEventListener('input', function() {
+                if (tr.dataset.selectedProductName && this.value !== tr.dataset.selectedProductName) {
+                    tr.querySelector('.item-product-id').value = '';
+                    delete tr.dataset.selectedProductName;
+                    delete tr.dataset.availableStock;
+                }
             });
 
             nameInput.addEventListener('blur', () => setTimeout(() => prodList.classList.remove('show'), 200));
@@ -739,11 +750,18 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
             // Validate items
             const items = [];
             let valid = false;
+            let stockValid = true;
 
             document.querySelectorAll('#itemsBody tr').forEach(row => {
                 const name = row.querySelector('.item-name').value.trim();
                 const mrp = parseFloat(row.querySelector('.item-mrp').value) || 0;
                 if (name && mrp > 0) {
+                    const requested = parseFloat(row.querySelector('.item-qty').value) || 0;
+                    if (row.querySelector('.item-product-id').value && requested > parseFloat(row.dataset.availableStock || 0)) {
+                        alert(name + ' has only ' + (row.dataset.availableStock || 0) + ' in stock.');
+                        stockValid = false;
+                        return;
+                    }
                     valid = true;
                     items.push({
                         product_id: row.querySelector('.item-product-id').value || '',
@@ -757,6 +775,8 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
                     });
                 }
             });
+
+            if (!stockValid) return;
 
             if (!valid) {
                 alert('Please add at least one item with description and MRP.');

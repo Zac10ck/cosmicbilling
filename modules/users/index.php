@@ -4,9 +4,10 @@
  * COSMIC SURGICALS - Invoice Management System
  */
 
+require_once __DIR__ . '/../../includes/auth.php';
+requireAdmin();
 $pageTitle = 'Users';
 require_once __DIR__ . '/../../includes/header.php';
-requireAdmin();
 
 $db = getDB();
 

@@ -131,10 +131,13 @@ if ($connected && empty($errors)) {
             id INT PRIMARY KEY AUTO_INCREMENT,
             name VARCHAR(200) NOT NULL,
             hsn_code VARCHAR(20),
+            barcode VARCHAR(100) UNIQUE,
+            image_path VARCHAR(255),
             gst_rate DECIMAL(5,2) DEFAULT 5.00,
             mrp DECIMAL(10,2),
             unit VARCHAR(20) DEFAULT 'Nos',
-            stock_count INT DEFAULT 0,
+            stock_count DECIMAL(12,2) NOT NULL DEFAULT 0,
+            low_stock_threshold DECIMAL(12,2) NOT NULL DEFAULT 5,
             active TINYINT(1) DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -199,6 +202,27 @@ if ($connected && empty($errors)) {
 
             INDEX idx_invoice_id (invoice_id),
             FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
+        )",
+
+        // Immutable inventory audit trail
+        "CREATE TABLE IF NOT EXISTS stock_movements (
+            id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+            product_id INT NOT NULL,
+            movement_type VARCHAR(30) NOT NULL,
+            quantity_change DECIMAL(12,2) NOT NULL DEFAULT 0,
+            stock_before DECIMAL(12,2) NOT NULL DEFAULT 0,
+            stock_after DECIMAL(12,2) NOT NULL DEFAULT 0,
+            reference_type VARCHAR(30),
+            reference_id INT,
+            notes VARCHAR(500),
+            details TEXT,
+            created_by INT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_stock_product_date (product_id, created_at),
+            INDEX idx_stock_reference (reference_type, reference_id),
+            INDEX idx_stock_created_by (created_by),
+            FOREIGN KEY (product_id) REFERENCES products(id),
+            FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
         )"
     ];
 

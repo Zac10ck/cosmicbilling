@@ -20,6 +20,12 @@ function formatCurrency($amount) {
     return number_format((float)$amount, 2);
 }
 
+/** Format stock without unnecessary trailing zeroes. */
+function formatStock($amount) {
+    $formatted = number_format((float)$amount, 2, '.', '');
+    return rtrim(rtrim($formatted, '0'), '.');
+}
+
 /**
  * Format date for display
  */
@@ -111,7 +117,8 @@ function getProducts($search = '') {
     $params = [];
 
     if ($search) {
-        $sql .= " AND (name LIKE ? OR hsn_code LIKE ?)";
+        $sql .= " AND (name LIKE ? OR hsn_code LIKE ? OR barcode LIKE ?)";
+        $params[] = "%$search%";
         $params[] = "%$search%";
         $params[] = "%$search%";
     }

@@ -21,6 +21,10 @@ global $company;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3157d5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="/xamp-cosmic/manifest.webmanifest">
+    <link rel="icon" href="/xamp-cosmic/assets/icons/icon.svg" type="image/svg+xml">
     <title><?php echo isset($pageTitle) ? e($pageTitle) . ' - ' : ''; ?>COSMIC SURGICALS</title>
     <link rel="stylesheet" href="/xamp-cosmic/assets/css/style.css">
 </head>
@@ -29,13 +33,14 @@ global $company;
         <div class="nav-brand">
             <a href="/xamp-cosmic/">COSMIC SURGICALS</a>
         </div>
-        <div class="nav-menu">
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">☰</button>
+        <div class="nav-menu" id="mainNav">
             <?php if (isAdmin()): ?>
                 <a href="/xamp-cosmic/modules/dashboard/index.php" class="<?php echo $currentModule === 'dashboard' ? 'active' : ''; ?>">Dashboard</a>
             <?php endif; ?>
             <a href="/xamp-cosmic/modules/invoices/index.php" class="<?php echo $currentModule === 'invoices' ? 'active' : ''; ?>">Invoices</a>
             <a href="/xamp-cosmic/modules/customers/index.php" class="<?php echo $currentModule === 'customers' ? 'active' : ''; ?>">Customers</a>
-            <a href="/xamp-cosmic/modules/products/index.php" class="<?php echo $currentModule === 'products' ? 'active' : ''; ?>">Products</a>
+            <a href="/xamp-cosmic/modules/inventory/index.php" class="<?php echo $currentModule === 'inventory' || $currentModule === 'products' ? 'active' : ''; ?>">Inventory</a>
             <?php if (isAdmin()): ?>
                 <a href="/xamp-cosmic/modules/reports/index.php" class="<?php echo $currentModule === 'reports' ? 'active' : ''; ?>">Reports</a>
                 <a href="/xamp-cosmic/modules/users/index.php" class="<?php echo $currentModule === 'users' ? 'active' : ''; ?>">Users</a>

@@ -1,5 +1,7 @@
 # Logs (keep directory, ignore contents)
 logs/*.log
+uploads/products/*
+!uploads/products/.gitkeep
 
 # OS files
 .DS_Store

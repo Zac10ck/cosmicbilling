@@ -29,9 +29,11 @@ $results = array_map(function($p) {
         'id' => $p['id'],
         'name' => $p['name'],
         'hsn_code' => $p['hsn_code'],
+        'barcode' => $p['barcode'],
         'gst_rate' => $p['gst_rate'],
         'mrp' => $p['mrp'],
-        'unit' => $p['unit']
+        'unit' => $p['unit'],
+        'stock_count' => $p['stock_count']
     ];
 }, $products);
 

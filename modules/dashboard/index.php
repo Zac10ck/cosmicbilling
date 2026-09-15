@@ -4,9 +4,10 @@
  * COSMIC SURGICALS - Invoice Management System
  */
 
+require_once __DIR__ . '/../../includes/auth.php';
+requireAdmin();
 $pageTitle = 'Dashboard';
 require_once __DIR__ . '/../../includes/header.php';
-requireAdmin();
 
 $db = getDB();
 
@@ -31,6 +32,13 @@ $totalCustomers = $stmt->fetchColumn();
 // Total products
 $stmt = $db->query("SELECT COUNT(*) FROM products WHERE active = 1");
 $totalProducts = $stmt->fetchColumn();
+
+// Inventory alerts
+$stmt = $db->query("SELECT
+    SUM(stock_count <= low_stock_threshold AND stock_count > 0) AS low_count,
+    SUM(stock_count <= 0) AS out_count
+    FROM products WHERE active = 1");
+$stockAlerts = $stmt->fetch();
 
 // Recent invoices
 $stmt = $db->query("SELECT i.*, u.name as created_by_name FROM invoices i
@@ -66,6 +74,16 @@ $recentInvoices = $stmt->fetchAll();
         <h3>Products</h3>
         <div class="value"><?php echo $totalProducts; ?></div>
     </div>
+
+    <a href="/xamp-cosmic/modules/inventory/index.php?filter=low" class="stat-card orange">
+        <h3>Low Stock</h3>
+        <div class="value"><?php echo (int)$stockAlerts['low_count']; ?></div>
+    </a>
+
+    <a href="/xamp-cosmic/modules/inventory/index.php?filter=out" class="stat-card red">
+        <h3>Out of Stock</h3>
+        <div class="value"><?php echo (int)$stockAlerts['out_count']; ?></div>
+    </a>
 </div>
 
 <div class="card">

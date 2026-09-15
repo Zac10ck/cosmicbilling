@@ -4,9 +4,10 @@
  * COSMIC SURGICALS - Invoice Management System
  */
 
+require_once __DIR__ . '/../../includes/auth.php';
+requireAdmin();
 $pageTitle = 'Monthly Report';
 require_once __DIR__ . '/../../includes/header.php';
-requireAdmin();
 
 $db = getDB();
 $month = (int)($_GET['month'] ?? date('n'));
