@@ -115,6 +115,13 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
         .items-table .item-mrp { font-size: 16px !important; font-weight: 600 !important; color: #1e3c72 !important; padding: 12px 8px !important; text-align: right !important; }
         .items-table .calc-cell { background: linear-gradient(135deg, #f0f4ff, #e8f0fe); font-weight: 600; color: #1e3c72; font-size: 13px; }
         .items-table .total-cell { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; font-weight: 700; font-size: 14px; border-radius: 6px; }
+        .item-source-toggle { display: flex; width: max-content; max-width: 100%; padding: 3px; margin-bottom: 8px; background: #eef2f7; border-radius: 9px; }
+        .item-source-btn { border: 0; border-radius: 7px; padding: 7px 11px; background: transparent; color: #64748b; font: 600 11px/1.2 inherit; cursor: pointer; }
+        .item-source-btn.active { background: #1e3c72; color: white; box-shadow: 0 2px 7px rgba(30,60,114,.25); }
+        .item-link-status { margin-top: 6px; color: #64748b; font-size: 11px; line-height: 1.35; text-align: left; }
+        .item-link-status.linked { color: #047857; font-weight: 600; }
+        .item-link-status.warning { color: #b45309; font-weight: 600; }
+        .item-link-status.manual { color: #475569; }
 
         .btn { padding: 12px 24px; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: inherit; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
         .btn-add { background: linear-gradient(135deg, #059669, #10b981); color: white; box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3); margin-top: 15px; }
@@ -170,7 +177,33 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
         @media (max-width: 768px) {
             .totals-grid { grid-template-columns: 1fr; }
             .form-grid { grid-template-columns: 1fr 1fr; }
+            body { padding: 12px 8px; }
+            .app-header { margin-bottom: 18px; }
+            .app-header h1 { font-size: 26px; }
+            .app-header p { font-size: 12px; }
+            .nav-bar { gap: 8px; font-size: 12px; }
+            .nav-bar a { padding: 9px 10px; }
+            .card-body { padding: 16px 12px; }
+            .items-wrapper { overflow: visible; margin: 0; padding: 0; }
+            .items-table { min-width: 0; display: block; }
+            .items-table thead { display: none; }
+            .items-table tbody { display: block; }
+            .items-table tbody tr { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; position: relative; margin-bottom: 16px; padding: 42px 12px 12px; border: 2px solid #e5e7eb; border-radius: 14px; background: white; box-shadow: 0 4px 12px rgba(15,23,42,.06); }
+            .items-table tbody tr:hover { background: white; }
+            .items-table td { display: block; padding: 0; border: 0; text-align: left; }
+            .items-table td::before { content: attr(data-label); display: block; margin-bottom: 5px; color: #64748b; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+            .items-table .item-number-cell { position: absolute; top: 12px; left: 12px; width: 25px; height: 25px; padding-top: 3px; border-radius: 50%; background: #1e3c72; color: white; text-align: center; font-weight: 700; }
+            .items-table .item-number-cell::before { display: none; }
+            .items-table .description-cell, .items-table .actions-cell { grid-column: 1 / -1; }
+            .items-table .total-cell { display: flex; align-items: center; min-height: 44px; padding: 10px 12px; font-size: 17px; }
+            .items-table .total-cell::before { margin: 0 auto 0 0; color: rgba(255,255,255,.8); }
+            .items-table .actions-cell { display: flex; justify-content: flex-end; gap: 8px; padding-top: 2px; }
+            .btn-more, .btn-remove { min-height: 42px; min-width: 48px; margin: 0; }
+            .btn-add { width: 100%; justify-content: center; min-height: 48px; }
+            .btn-print { width: 100%; justify-content: center; padding: 17px 20px; }
         }
+
+        @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
 
         /* Print Styles */
         @media print {
@@ -547,19 +580,25 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
             itemCount++;
             const tbody = document.getElementById('itemsBody');
             const tr = document.createElement('tr');
+            tr.dataset.itemSource = 'inventory';
             tr.innerHTML = `
-                <td>${itemCount}</td>
-                <td style="position:relative;">
-                    <input type="text" class="item-name" placeholder="Search or type item..." autocomplete="off">
+                <td class="item-number-cell">${itemCount}</td>
+                <td class="description-cell" data-label="Item description" style="position:relative;">
+                    <div class="item-source-toggle" aria-label="Item source">
+                        <button type="button" class="item-source-btn active" data-source="inventory">From inventory</button>
+                        <button type="button" class="item-source-btn" data-source="manual">Manual item</button>
+                    </div>
+                    <input type="text" class="item-name" placeholder="Search inventory by name, HSN or barcode" autocomplete="off">
                     <input type="hidden" class="item-product-id">
                     <input type="hidden" class="item-hsn">
                     <input type="hidden" class="item-batch">
                     <input type="hidden" class="item-expiry">
                     <div class="autocomplete-list product-list"></div>
+                    <div class="item-link-status">Select a product from the list to deduct stock</div>
                 </td>
-                <td><input type="number" class="item-qty" value="1" min="1" onchange="calculateAll()" onkeyup="calculateAll()"></td>
-                <td><input type="number" class="item-mrp" placeholder="0.00" step="0.01" min="0" onchange="calculateAll()" onkeyup="calculateAll()"></td>
-                <td>
+                <td data-label="Quantity"><input type="number" class="item-qty" value="1" min="1" onchange="calculateAll()" onkeyup="calculateAll()"></td>
+                <td data-label="MRP (₹)"><input type="number" class="item-mrp" placeholder="0.00" step="0.01" min="0" onchange="calculateAll()" onkeyup="calculateAll()"></td>
+                <td data-label="GST">
                     <select class="item-gst" onchange="calculateAll()">
                         <option value="0">0%</option>
                         <option value="5" selected>5%</option>
@@ -568,8 +607,8 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
                         <option value="28">28%</option>
                     </select>
                 </td>
-                <td class="total-cell item-total">0.00</td>
-                <td>
+                <td class="total-cell item-total" data-label="Total (₹)">0.00</td>
+                <td class="actions-cell">
                     <button class="btn btn-more" onclick="openItemDetails(this)" title="HSN, Batch, Expiry">⋯</button>
                     <button class="btn btn-remove" onclick="removeItem(this)" title="Remove">×</button>
                 </td>
@@ -579,8 +618,17 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
             // Product autocomplete
             const nameInput = tr.querySelector('.item-name');
             const prodList = tr.querySelector('.product-list');
+            const linkStatus = tr.querySelector('.item-link-status');
+
+            tr.querySelectorAll('.item-source-btn').forEach(button => {
+                button.addEventListener('click', function() { setItemSource(tr, this.dataset.source); });
+            });
 
             nameInput.addEventListener('input', function() {
+                if (tr.dataset.itemSource !== 'inventory') {
+                    prodList.classList.remove('show');
+                    return;
+                }
                 const val = this.value.toLowerCase();
                 if (val.length < 2) { prodList.classList.remove('show'); return; }
 
@@ -607,6 +655,9 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
                             tr.querySelector('.item-hsn').value = p.hsn_code || '';
                             tr.querySelector('.item-mrp').value = p.mrp || 0;
                             tr.querySelector('.item-gst').value = p.gst_rate || 5;
+                            const stock = parseFloat(p.stock_count || 0);
+                            linkStatus.textContent = 'Linked to inventory · ' + (p.stock_count || 0) + ' ' + (p.unit || '') + ' available · stock will be deducted';
+                            linkStatus.className = 'item-link-status ' + (stock > 0 ? 'linked' : 'warning');
                             calculateAll();
                         }
                         prodList.classList.remove('show');
@@ -619,10 +670,34 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
                     tr.querySelector('.item-product-id').value = '';
                     delete tr.dataset.selectedProductName;
                     delete tr.dataset.availableStock;
+                    linkStatus.textContent = 'Select a product from the list to deduct stock';
+                    linkStatus.className = 'item-link-status';
                 }
             });
 
             nameInput.addEventListener('blur', () => setTimeout(() => prodList.classList.remove('show'), 200));
+        }
+
+        function setItemSource(row, source) {
+            row.dataset.itemSource = source;
+            row.querySelectorAll('.item-source-btn').forEach(button => button.classList.toggle('active', button.dataset.source === source));
+            row.querySelector('.item-product-id').value = '';
+            row.querySelector('.item-name').value = '';
+            delete row.dataset.selectedProductName;
+            delete row.dataset.availableStock;
+            row.querySelector('.product-list').classList.remove('show');
+            const nameInput = row.querySelector('.item-name');
+            const status = row.querySelector('.item-link-status');
+            if (source === 'manual') {
+                nameInput.placeholder = 'Type item description';
+                status.textContent = 'Manual item · inventory stock will not change';
+                status.className = 'item-link-status manual';
+            } else {
+                nameInput.placeholder = 'Search inventory by name, HSN or barcode';
+                status.textContent = 'Select a product from the list to deduct stock';
+                status.className = 'item-link-status';
+            }
+            nameInput.focus();
         }
 
         function removeItem(btn) {
@@ -757,6 +832,11 @@ $customers = $db->query("SELECT * FROM customers WHERE active = 1 ORDER BY name"
                 const mrp = parseFloat(row.querySelector('.item-mrp').value) || 0;
                 if (name && mrp > 0) {
                     const requested = parseFloat(row.querySelector('.item-qty').value) || 0;
+                    if (row.dataset.itemSource === 'inventory' && !row.querySelector('.item-product-id').value) {
+                        alert('Select "' + name + '" from the inventory list, or choose Manual item if stock should not change.');
+                        stockValid = false;
+                        return;
+                    }
                     if (row.querySelector('.item-product-id').value && requested > parseFloat(row.dataset.availableStock || 0)) {
                         alert(name + ' has only ' + (row.dataset.availableStock || 0) + ' in stock.');
                         stockValid = false;
