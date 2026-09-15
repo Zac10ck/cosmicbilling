@@ -1,8 +1,9 @@
-const CACHE_NAME = 'cosmic-stock-v2-2';
+const CACHE_NAME = 'cosmic-stock-v2-3';
 const STATIC_ASSETS = [
   '/xamp-cosmic/assets/css/style.css?v=2.0.2',
-  '/xamp-cosmic/assets/js/app.js?v=2.0.2',
-  '/xamp-cosmic/assets/js/barcode.js?v=2.0.2',
+  '/xamp-cosmic/assets/js/app.js?v=2.0.3',
+  '/xamp-cosmic/assets/vendor/zxing/index.min.js?v=0.21.3',
+  '/xamp-cosmic/assets/js/barcode.js?v=2.0.3',
   '/xamp-cosmic/assets/icons/icon.svg',
   '/xamp-cosmic/offline.html'
 ];

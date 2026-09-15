@@ -29,7 +29,7 @@ The SQL can also be downloaded from the **Inventory** page while signed in as Ad
 3. Connect the Android phone to the same Wi-Fi.
 4. Open `http://192.168.1.20/xamp-cosmic/` in Chrome.
 
-Billing and manual stock entry work over local HTTP. Live camera scanning and installation as a PWA require a secure HTTPS connection on non-localhost addresses. Configure Apache HTTPS with a certificate trusted by the Android phones before relying on live scanning. Until then, the Scan screen provides manual barcode entry. Do not expose the XAMPP PC directly to the public internet.
+Billing and stock entry work over local HTTP. On HTTP, **Scan** offers a **Take barcode photo** fallback that decodes the image locally on the phone; no image is uploaded. Continuous live scanning and installation as a PWA require a secure HTTPS connection on non-localhost addresses. Configure Apache HTTPS with a certificate trusted by the Android phones to enable those features. Do not expose the XAMPP PC directly to the public internet.
 
 ## Role rules
 

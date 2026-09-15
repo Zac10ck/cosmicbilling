@@ -33,20 +33,40 @@
 
         var photoInput = modal.querySelector('input[type=file]');
         photoInput.addEventListener('change', async function () {
-            if (!photoInput.files[0] || !('BarcodeDetector' in window)) return;
+            if (!photoInput.files[0]) return;
+            var status = modal.querySelector('.scanner-status');
+            status.textContent = 'Reading barcode from photo…';
+            var imageUrl = URL.createObjectURL(photoInput.files[0]);
             try {
-                var bitmap = await createImageBitmap(photoInput.files[0]);
-                var codes = await new BarcodeDetector().detect(bitmap);
-                if (codes.length) completeScan(target, codes[0].rawValue, submitAfter);
-                else modal.querySelector('.scanner-status').textContent = 'No barcode found. Try again or type it below.';
-            } catch (error) { modal.querySelector('.scanner-status').textContent = 'Could not read that photo. Type the barcode below.'; }
+                var value = '';
+                if ('BarcodeDetector' in window) {
+                    var bitmap = await createImageBitmap(photoInput.files[0]);
+                    var codes = await new BarcodeDetector().detect(bitmap);
+                    if (codes.length) value = codes[0].rawValue;
+                } else if (window.ZXing && window.ZXing.BrowserMultiFormatReader) {
+                    var reader = new window.ZXing.BrowserMultiFormatReader();
+                    var result = await reader.decodeFromImageUrl(imageUrl);
+                    value = result && result.getText ? result.getText() : String(result || '');
+                    reader.reset();
+                }
+                if (value) completeScan(target, value, submitAfter);
+                else status.textContent = 'No barcode found. Move closer, keep it sharp and try again.';
+            } catch (error) {
+                status.textContent = 'Could not read that barcode. Retake the photo in good light or type it below.';
+            } finally {
+                URL.revokeObjectURL(imageUrl);
+                photoInput.value = '';
+            }
         });
 
         if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !('BarcodeDetector' in window)) {
             modal.querySelector('.scanner-video').style.display = 'none';
             modal.querySelector('.scanner-frame').style.display = 'none';
-            if (!('BarcodeDetector' in window)) photoInput.parentNode.style.display = 'none';
-            modal.querySelector('.scanner-status').textContent = window.isSecureContext ? 'Automatic scanning is unavailable on this browser. Type the barcode below.' : 'Live scanning needs HTTPS. Type the barcode below until HTTPS is configured.';
+            var hasPhotoDecoder = ('BarcodeDetector' in window) || (window.ZXing && window.ZXing.BrowserMultiFormatReader);
+            if (!hasPhotoDecoder) photoInput.parentNode.style.display = 'none';
+            modal.querySelector('.scanner-status').textContent = hasPhotoDecoder
+                ? 'Live scanning needs HTTPS. Take a clear barcode photo instead.'
+                : 'Automatic scanning is unavailable. Type the barcode below.';
             return;
         }
 
